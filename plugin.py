@@ -1144,19 +1144,10 @@ def GetSection(indexer, indexer_id, section, url, type, page='', total_pages='',
             istream_query_dict.update({'trailer':trailer})
             
             contextMenuItems.insert( 0 , ('[COLOR green]Add[/COLOR] to [B][COLOR royalblue]my[/COLOR]Stream[/B]', 'RunPlugin(%s)' % common.addon.build_plugin_url(istream_query_dict)))                            
+
             if video_type in (common.VideoType_Movies, common.VideoType_Episode):
-                auto_or_host_item = item_query_dict.copy()
-                autoplaysetting = entertainment.GetiStreamSettings(indexer, 'autoplay')
-                autoplay = (autoplaysetting == 'true')
-                if autoplay:
-                    auto_or_host_item.update({'autoplay':'false'})
-                    contextMenuItems.insert(1, ('[COLOR gold]Hosts...[/COLOR]', 'Container.Update(%s, True)' % common.addon.build_plugin_url(auto_or_host_item)))
-                else:
-                    auto_or_host_item.update({'autoplay':'true'})
-                    contextMenuItems.insert(1, ('[COLOR gold]Autoplay...[/COLOR]', 'Container.Update(%s, True)' % common.addon.build_plugin_url(auto_or_host_item)))
-                #show_hosts_auto_dialog = item_query_dict.copy()
-                #show_hosts_auto_dialog.update( {'show_hosts_autoplay_dialog' : 'true'})
-                #contextMenuItems.insert(1, ('[COLOR gold][B]-= Hosts/Autoplay =-[/B][/COLOR]', 'Container.Update(%s, True)' % common.addon.build_plugin_url(show_hosts_auto_dialog)))
+                AddAutoPlayContext(contextMenuItems, item_query_dict,indexer,'GetSection')
+
             common.addon.add_directory(item_query_dict, this_meta, 
                     contextmenu_items=contextMenuItems, context_replace=True, img=meta_img, fanart=meta_fanart, total_items=totalitems)
         item_list_index = item_list_index + 1
@@ -1351,26 +1342,33 @@ def GetContent(indexer, indexer_id, url, title, name, year, season, episode, typ
         item_query_dict.update({'trailer':trailer})
     
         if video_type in (common.VideoType_Movies, common.VideoType_Episode):
-            auto_or_host_item = item_query_dict.copy()
-            autoplaysetting = entertainment.GetiStreamSettings(indexer, 'autoplay')
-            autoplay = (autoplaysetting == 'true')
-            if autoplay:
-                auto_or_host_item.update({'autoplay':'false'})
-                contextMenuItems.insert(1, ('[COLOR gold]Hosts...[/COLOR]', 'Container.Update(%s, True)' % common.addon.build_plugin_url(auto_or_host_item)))
-            else:
-                auto_or_host_item.update({'autoplay':'true'})
-                contextMenuItems.insert(1, ('[COLOR gold]Autoplay...[/COLOR]', 'Container.Update(%s, True)' % common.addon.build_plugin_url(auto_or_host_item)))
-            #show_hosts_auto_dialog = item_query_dict.copy()
-            #show_hosts_auto_dialog.update( {'show_hosts_autoplay_dialog' : 'true'})
-            #contextMenuItems.insert(1, ('[COLOR gold][B]-= Hosts/Autoplay =-[/B][/COLOR]', 'Container.Update(%s, True)' % common.addon.build_plugin_url(show_hosts_auto_dialog)))
-        common.addon.add_directory(item_query_dict, this_meta, 
+            AddAutoPlayContext(contextMenuItems, item_query_dict, indexer, 'GetContent')
+
+        common.addon.add_directory(item_query_dict, this_meta,
                 contextmenu_items=contextMenuItems, context_replace=True, img=meta_img, fanart=meta_fanart, total_items=totalitems)
     
         item_list_index = item_list_index + 1                
     
     setViewForMode(mode)
     common.addon.end_of_directory()
-    
+
+
+def AddAutoPlayContext(contextMenuItems, item_query_dict,indexer, source):
+    print 'print JUSTIN IS THE BEST! %s' % source
+    auto_or_host_item = item_query_dict.copy()
+    autoplaysetting = entertainment.GetiStreamSettings(indexer, 'autoplay')
+    autoplay = (autoplaysetting == 'true')
+    if autoplay:
+        auto_or_host_item.update({'autoplay':'false'})
+        contextMenuItems.insert(1, ('[COLOR gold]Hosts...[/COLOR]', 'Container.Update(%s, True)' % common.addon.build_plugin_url(auto_or_host_item)))
+    else:
+        auto_or_host_item.update({'autoplay':'true'})
+        contextMenuItems.insert(1, ('[COLOR gold]Autoplay...[/COLOR]', 'Container.Update(%s, True)' % common.addon.build_plugin_url(auto_or_host_item)))
+    #show_hosts_auto_dialog = item_query_dict.copy()
+    #show_hosts_auto_dialog.update( {'show_hosts_autoplay_dialog' : 'true'})
+    #contextMenuItems.insert(1, ('[COLOR gold][B]-= Hosts/Autoplay =-[/B][/COLOR]', 'Container.Update(%s, True)' % common.addon.build_plugin_url(show_hosts_auto_dialog)))
+
+
 def GetSportsContent(indexer, indexer_id, title):
     add_dir_title()
     
@@ -1944,8 +1942,7 @@ def Search(indexer, type, page='', total_pages='', search_term='', individual_to
                     item_play = item.get('play', None)
                     if item_play:
                         search_queries.update( {'play':item_play} )
-                    common.addon.add_directory( search_queries, this_meta, 
-                            contextmenu_items=contextMenuItems, context_replace=True, img=meta_img, fanart=meta_fanart, total_items=totalitems)
+
                 except:
                     search_queries = {'indexer':item_indexer, 'indexer_id':item_indexer_id, 'source':item_indexer, 'source_id':item_indexer_id, 'mode':item_mode, 'section':item_section, 
                             'title':urllib.quote_plus(common.CleanText2(item_title, True, True)), 'name':urllib.quote_plus(common.CleanText2(item_name, True, True)), 'year':item_year, 'season':item_season, 'favorite':item_fav, 
@@ -1955,7 +1952,11 @@ def Search(indexer, type, page='', total_pages='', search_term='', individual_to
                     item_play = item.get('play', None)
                     if item_play:
                         search_queries.update( {'play':item_play} )
-                    common.addon.add_directory( search_queries, this_meta, 
+
+                if video_type in (common.VideoType_Movies, common.VideoType_Episode):
+                    AddAutoPlayContext(contextMenuItems, search_queries, indexer,'search')
+
+                common.addon.add_directory( search_queries, this_meta,
                             contextmenu_items=contextMenuItems, context_replace=True, img=meta_img, fanart=meta_fanart, total_items=totalitems)
 
         if next_page_dict:
